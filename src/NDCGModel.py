@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 import math as m
 import copy
+import subprocess
 
 DEBUG = True
 results = []
@@ -94,39 +95,59 @@ class NDCG():
         return temp
 
     def gen_ndcg_average(self):
-        ats = [0, 0, 0, 0, 0]
+        # TODO this is nasty nasty - rewrite!!
+        ats = [0] * 7
         for i in range(len(ndcg_list)):
-            if i == 0:
+            if i % 7 == 0:               # @1
                 ats[0] += ndcg_list[i]
-            if i % 5 == 0:
+            if i % 7 == 0:               # @5
                 ats[1] += ndcg_list[i]
-            elif i % 5 == 1:
+            elif i % 7 == 1:             # @10
                 ats[2] += ndcg_list[i]
-            elif i % 5 == 2:
+            elif i % 7 == 2:             # @20
                 ats[3] += ndcg_list[i]
-            else:
+            elif i % 7 == 3:             # @30
                 ats[4] += ndcg_list[i]
-        n_length = len(ndcg_list) / 4
+            elif i % 7 == 4:             # @40
+                ats[5] += ndcg_list[i]
+            else:                        # @50
+                ats[6] += ndcg_list[i]
+        n_length = len(ndcg_list) / 7
         ats = map((lambda x: x / n_length), ats)
-        print("at 1 {}, at 5 {}, at 10 {}, at 20 {}, at 40 {}".format(
-            ats[0], ats[1], ats[2], ats[3], ats[4]))
+        print("at 1 {}, at 5 {}, at 10 {}, at 20 {}, at 30 {}, at 40 {}, at 50 {}".format(
+            ats[0], ats[1], ats[2], ats[3], ats[4], ats[5], ats[6]))
+
+
+def find_file(search, extension):
+    # not very portable solution to finding the files on the system
+    filepath = subprocess.check_output(
+        'find ~/ -type f -name "{}" | grep -i {}'.format(
+            extension, search), shell=True)
+    return filepath
 
 
 if __name__ == '__main__':
-    results_file = open(
-        '/home/david/Documents/data_retrieval/coursework/BM25b0.75_0.res')
-    relevancy_file = open(
-        '/home/david/Documents/data_retrieval/coursework/qrels.adhoc.txt')
-    calc = NDCG()
-    calc.gen_results_array(results_file)
-    calc.gen_relevancy_dict(relevancy_file)
-    calc.assign_relevancy_to_result()
-    for group_num in range(201, 251):
-        rels = calc.extract_relevancies(group_num)
-        ideal = calc.make_ideal_list(rels)
-        if rels is not None:
-            map(lambda x: calc.calc_ndcg(rels, ideal, x),
-                [1, 5, 10, 20, 30, 40, 50])
-    calc.gen_ndcg_average()
-    results_file.close()
-    results_file.close()
+    try:
+        results_file = open(find_file("BM25b0.75_0", "*.res").strip())
+        relevancy_file = open(find_file("qrels.adhoc", "*.txt").strip())
+        calc = NDCG()
+        calc.gen_results_array(results_file)
+        calc.gen_relevancy_dict(relevancy_file)
+        calc.assign_relevancy_to_result()
+
+        # main function really starts here
+        for group_num in range(201, 251):
+            rels = calc.extract_relevancies(group_num)
+            ideal = calc.make_ideal_list(rels)
+            if rels is not None:
+                map(lambda x: calc.calc_ndcg(rels, ideal, x),
+                    [1, 5, 10, 20, 30, 40, 50])
+
+        calc.gen_ndcg_average()
+    except:
+        pass
+    finally:
+        if results_file is not None:
+            results_file.close()
+        if relevancy_file is not None:
+            relevancy_file.close()
