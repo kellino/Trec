@@ -38,7 +38,7 @@ class NDCG():
                 ndcg = dcg/idcg
             ndcg_list.append(ndcg)
         if DEBUG:
-            self.print_debug(rels, sorted_rels, dcg, idcg, k, ndcg)
+            self.print_debug(rels[:k], sorted_rels[:k], dcg, idcg, k, ndcg)
 
     def print_debug(self, rels, sorted_rels, dcg, idcg, k, ndcg):
         for i in rels:
