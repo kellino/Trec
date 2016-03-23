@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 import math
-import subprocess
+from filehandler import FileHandler
 
 doc_collection = []
 query_collection = []
@@ -23,13 +23,6 @@ class Query():
         self.queryNo = queryNo
         self.terms = terms
         self.term_frequency = term_frequency
-
-
-def find_file(search, extension):
-    filepath = subprocess.check_output(
-        'find ~/ -type f -name "{}" | grep -i {}'.format(
-            extension, search), shell=True)
-    return filepath
 
 
 def parse_file(filename, obj_type, array):
@@ -103,8 +96,9 @@ def calculate_bm25(query, avdl):
 
 if __name__ == '__main__':
     try:
-        query_file = open(find_file("query_term_vectors", "*.dat").strip())
-        doc_file = open(find_file("document_term_vectors", "*.dat").strip())
+        f = FileHandler()
+        query_file = open(f.find_file("query_term_vectors", "*.dat"))
+        doc_file = open(f.find_file("document_term_vectors", "*.dat"))
         # read the query file into the query_collection list
         parse_file(query_file, "query", query_collection)
         # read the doc file into the doc_collection list
@@ -113,10 +107,8 @@ if __name__ == '__main__':
         pass
     finally:
         # close open files
-        if query_file is not None:
-            query_file.close()
-        if doc_file is not None:
-            doc_file.close()
+        f.close_file(query_file)
+        f.close_file(doc_file)
     get_doc_length()
     avdl = get_average_doc_length()
     get_term_totals()
