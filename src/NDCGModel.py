@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 import math as m
 import copy
-import subprocess
+from filehandler import FileHandler
 
 DEBUG = True
 results = []
@@ -118,18 +118,11 @@ class NDCG():
             ats[0], ats[1], ats[2], ats[3], ats[4], ats[5], ats[6]))
 
 
-def find_file(search, extension):
-    # not very portable solution to finding the files on the system
-    filepath = subprocess.check_output(
-        'find ~/ -type f -name "{}" | grep -i {}'.format(
-            extension, search), shell=True)
-    return filepath
-
-
 if __name__ == '__main__':
     try:
-        results_file = open(find_file("BM25b0.75_0", "*.res").strip())
-        relevancy_file = open(find_file("qrels.adhoc", "*.txt").strip())
+        f = FileHandler()
+        results_file = open(f.find_file("BM25b0.75_0", "*.res").strip())
+        relevancy_file = open(f.find_file("qrels.adhoc", "*.txt").strip())
         calc = NDCG()
         calc.gen_results_array(results_file)
         calc.gen_relevancy_dict(relevancy_file)
