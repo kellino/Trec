@@ -10,3 +10,13 @@ class VecObject():
         self.ID = ID
         self.terms = terms
         self.term_frequencies = term_frequencies
+
+
+class Doc():
+    # class specifically for use with the portfolio implementation
+    def __init__(self, ID=None, terms=None, term_frequencies=None, bm25=None, altered=None):
+        self.ID = ID
+        self.terms = terms
+        self.term_frequencies = term_frequencies
+        self.bm25 = bm25
+        self.altered = altered
