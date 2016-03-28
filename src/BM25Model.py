@@ -1,7 +1,6 @@
 #!/usr/bin/python2.7
 from math import log
 from filehandler_vers2 import FileHandler
-from fileobjects import VecObject
 from sys import exit
 from collections import OrderedDict
 
@@ -11,24 +10,7 @@ idfs = dict()
 term_totals = dict()
 
 
-class Doc(VecObject):
-    # inherits from generic VecObject, and adds a doc length attribute - useful
-    # when calculating the bm25 score
-    def __init__(self, doc_length=None):
-        VecObject.__init__(self)
-        self.doc_length = doc_length
-
-
-class Query():
-    def __init__(self, queryNo=None, terms=None,
-                 term_frequency=None):
-        self.queryNo = queryNo
-        self.terms = terms
-        self.term_frequency = term_frequency
-
-
 class BM25():
-
     def get_doc_lengths(self):
         for k, doc in doc_collection.iteritems():
             doc.doc_length = sum(doc.term_frequencies)
@@ -45,46 +27,31 @@ class BM25():
         # get the terms totals of query items
         for k, doc in doc_collection.iteritems():
             for i in range(len(doc.terms)):
-                # if term already in dictionary, add the frequency of term to
-                # total
+                # if a term appears in the document, increment the count
                 if doc.terms[i] in term_totals:
-                    term_totals[doc.terms[i]] += doc.term_frequencies[i]
+                    term_totals[doc.terms[i]] += 1
                 # if term not in dictionary, initialize with the term frequency
                 else:
-                    term_totals[doc.terms[i]] = doc.term_frequencies[i]
+                    term_totals[doc.terms[i]] = 1
 
     def calculate_idf_of_terms(self, N):
         # calculate the inverse document frequency of each term in the query
+        # IDFt = log10(N/nt)
         for k, query in query_collection.iteritems():
             for q in query.terms:
-                nqi = term_totals.get(q)
-                partial = (N - nqi + 0.5) / (nqi + 0.5)
-                if partial >= 0.0:
-                    idf = log(partial, 2)
-                    if idf > 0.0:
-                        idfs[q] = idf
-                    else:
-                        idfs[q] = 0.0
+                nt = term_totals.get(q)
+                idfs[q] = log(N / nt)
+
 
     def calculate_bm25(self, query, avdl, k, b):
-        # query vector
-        q_vec = [q for q in query.terms]
-        # idfs of query vector
-        idf_of_q = [idfs.get(q) for q in q_vec]
-        print q_vec, idf_of_q
-        # for k, doc in doc_collection.iteritems():
-            # doc_vec = []        # holds the frequencies of the search terms
-            # for q in q_vec:
-                # if q in doc.terms:
-                    # doc_vec.append(doc.term_frequencies[doc.terms.index(q)])
-            # try:
-                # bm25 = sum(map(
-                    # (lambda x, y: x * (y * (k+1) / y + k *
-                                       # (1 - b + b * (doc.doc_length / avdl)))),
-                    # idf_of_q, doc_vec))
-                # print query.queryNo, doc.docID, bm25
-            # except:
-                # pass
+        for i, doc in doc_collection.iteritems():
+            # f(qi, D)
+            t_freq = []
+            # IDF(qi)
+            idf_list = []
+            for j in range(len(query.terms)):
+                idf_list.append(idfs.get(query.terms[j]))
+            print idf_list
 
 if __name__ == '__main__':
     try:
@@ -106,7 +73,5 @@ if __name__ == '__main__':
     b.get_term_totals()
     N = len(doc_collection)
     b.calculate_idf_of_terms(N)
-    for k, v in idfs.iteritems():
-        print k, v
     for k, v in query_collection.iteritems():
         b.calculate_bm25(v, avdl, 1.5, 0.75)
