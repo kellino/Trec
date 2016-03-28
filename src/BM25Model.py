@@ -42,16 +42,23 @@ class BM25():
                 nt = term_totals.get(q)
                 idfs[q] = log(N / nt)
 
-
     def calculate_bm25(self, query, avdl, k, b):
         for i, doc in doc_collection.iteritems():
             # f(qi, D)
             t_freq = []
+            for q in query.terms:
+                if q in doc.terms:
+                    t_freq.append(doc.term_frequencies[doc.terms.index(q)])
+                else:
+                    t_freq.append(0)
             # IDF(qi)
             idf_list = []
             for j in range(len(query.terms)):
                 idf_list.append(idfs.get(query.terms[j]))
-            print idf_list
+            s = sum(map((lambda idf, fq: idf * (k + 1) / (fq + (k * (
+                1 - b + (b * (doc.doc_length / avdl)))))), idf_list, t_freq))
+            print query.ID, doc.ID, s
+
 
 if __name__ == '__main__':
     try:
