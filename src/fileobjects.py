@@ -20,3 +20,17 @@ class Doc():
         self.term_frequencies = term_frequencies
         self.bm25 = bm25
         self.altered = altered
+
+
+class Result():
+    def __init__(self, queryNo, docID, bm25, relevance=None):
+        self.queryNo = queryNo
+        self.docID = docID
+        self.bm25 = bm25
+        self.relevance = relevance
+
+
+class Qrel():
+    def __init__(self, queryNo=None, relevance=None):
+        self.queryNo = queryNo
+        self.relevance = relevance
