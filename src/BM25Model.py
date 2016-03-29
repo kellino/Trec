@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 from math import log
-from filehandler_vers2 import FileHandler
+from filehandler import FileHandler
 from sys import exit
 from collections import OrderedDict
 from operator import itemgetter
