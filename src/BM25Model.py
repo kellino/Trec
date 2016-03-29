@@ -93,3 +93,7 @@ if __name__ == '__main__':
     b.calculate_idf_of_terms(N)
     for k, v in query_collection.iteritems():
         b.calculate_bm25(v, avdl, 1.5, 0.75)
+
+    cache = open('./idfs_cached', 'a')
+    cache.write(str(idfs))
+    cache.close
