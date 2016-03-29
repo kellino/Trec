@@ -12,6 +12,7 @@ term_totals = dict()
 
 
 class BM25():
+
     def get_doc_lengths(self):
         for k, doc in doc_collection.iteritems():
             doc.doc_length = sum(doc.term_frequencies)
@@ -41,7 +42,9 @@ class BM25():
         for k, query in query_collection.iteritems():
             for q in query.terms:
                 nt = term_totals.get(q)
-                idfs[q] = log(N / nt)
+                # the log base is irrelevant, but base 2 seems to run slightly
+                # faster
+                idfs[q] = log((N / nt), 2)
 
     def calculate_bm25(self, query, avdl, k, b):
         order = []
@@ -57,8 +60,11 @@ class BM25():
             idf_list = []
             for j in range(len(query.terms)):
                 idf_list.append(idfs.get(query.terms[j]))
-            s = sum(map((lambda idf, fq: idf * (k + 1) / (fq + (k * (
-                1 - b + (b * (doc.doc_length / avdl)))))), idf_list, t_freq))
+            # this version of bm25 was taken from Introduction to Information
+            # Retrieval, C. Manning et al
+            s = sum(map((lambda idf, tf: (k + 1) * tf / k * (
+                (1 - b) + b * (doc.doc_length / avdl)) + tf),
+                idf_list, t_freq))
             order.append([query.ID, doc.ID, s])
         order.sort(key=itemgetter(2), reverse=True)
         for o in order:
