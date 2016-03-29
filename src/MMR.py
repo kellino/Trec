@@ -1,11 +1,14 @@
 #!/usr/bin/python2.7
 from filehandler import FileHandler
-from math import sqrt
+from math import log
+import numpy as np
+from ast import literal_eval
 
 DEBUG = True
 queries = dict()
 docs = dict()
 top_results = dict()
+idfs = dict()
 
 
 class MMR():
@@ -37,19 +40,23 @@ class MMR():
             for k, v in ordered.iteritems():
                 print queryNo, v.ID, k
 
-    def _get_similarity(self, query, doc2):
-        vector = set(query.terms).intersection(doc2.terms)
-        # this is the bottleneck right here. How can this be rewritten?
-        root_indices = [query.terms.index(v) for v in vector]
-        r_indices = [doc2.terms.index(v) for v in vector]
-        root_frequencies = [query.term_frequencies[j] for j in root_indices]
-        r_frequencies = [doc2.term_frequencies[k] for k in r_indices]
-        numerator = sum(map((lambda x, y: x*y),
-                            root_frequencies, r_frequencies))
-        denominator = (sqrt(sum([x*x for x in query.term_frequencies]))
-                       * sqrt(sum(y*y for y in doc2.term_frequencies)))
-        return numerator / denominator
-
+    def get_similarity(self, query, doc):
+        # make a numpy array of terms and term frequencies
+        d_matrix = np.array([doc.terms, doc.term_frequencies])
+        # term frequencies of those terms present in both query and doc
+        intersection = []
+        for q in query.terms:
+            if q in d_matrix[0]:
+                i = np.nonzero(d_matrix[0] == q)
+                # the triple indexing here seems strange, but numpy returns a
+                # matrix rather than an int if we index it twice, so the third
+                # '0' index extracts the result from its context
+                # intersection.append(d_matrix[1][i][0])
+                tf = 1 + log(d_matrix[1][i][0])
+                intersection.append(tf)
+            else:
+                intersection.append(0)
+        print intersection
 
 if __name__ == '__main__':
     f = FileHandler()
@@ -58,12 +65,17 @@ if __name__ == '__main__':
     doc_file = open(f.find_file('document_term_vectors', '*.dat'))
     results_file = open(r'/home/david/Documents/data_retrieval'
                         r'/coursework/BM25b0.75_0.res')
+    # TODO cache the calculations from the bm25 so we don't have to
+    # keep running the bloody thing. Tidy this code away
+    with open('./idfs_cached', 'r') as idf_file:
+        s = idf_file.read()
+        idfs = literal_eval(s)
     f.fill_dictionary(doc_file, docs)
     f.fill_dictionary(query_file, queries)
     top_results = f.top_results_from_file(results_file, 100)
     f.close_file(query_file)
     f.close_file(doc_file)
     f.close_file(results_file)
-    # M.calc_mmr(201, 0.5)
-    for i in range(201, 251):
-        M.calc_mmr(i, 0.25)
+    for k, query in queries.iteritems():
+        for d, doc in docs.iteritems():
+            M.get_similarity(query, doc)
