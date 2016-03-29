@@ -3,6 +3,7 @@ from math import log
 from filehandler_vers2 import FileHandler
 from sys import exit
 from collections import OrderedDict
+from operator import itemgetter
 
 doc_collection = dict()
 query_collection = OrderedDict()
@@ -43,6 +44,7 @@ class BM25():
                 idfs[q] = log(N / nt)
 
     def calculate_bm25(self, query, avdl, k, b):
+        order = []
         for i, doc in doc_collection.iteritems():
             # f(qi, D)
             t_freq = []
@@ -57,7 +59,10 @@ class BM25():
                 idf_list.append(idfs.get(query.terms[j]))
             s = sum(map((lambda idf, fq: idf * (k + 1) / (fq + (k * (
                 1 - b + (b * (doc.doc_length / avdl)))))), idf_list, t_freq))
-            print query.ID, doc.ID, s
+            order.append([query.ID, doc.ID, s])
+        order.sort(key=itemgetter(2), reverse=True)
+        for o in order:
+            print o[0], o[1], o[2]
 
 
 if __name__ == '__main__':
