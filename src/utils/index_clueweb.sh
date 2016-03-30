@@ -52,4 +52,4 @@ make_index() {
     "$TERRIER_HOME/bin/trec_terrier.sh -i -j"
 }
 
-terrier_home && clueweb_home && terrier_setup && append_settings
+terrier_home && clueweb_home && terrier_setup && append_settings && make_index
