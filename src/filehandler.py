@@ -3,6 +3,7 @@ import subprocess
 from sys import exit
 import numpy as np
 from fileobjects import VecObject, Doc, VecObj2
+from collections import OrderedDict
 
 
 class FileHandler():
@@ -69,29 +70,19 @@ class FileHandler():
     def top_results_from_file(self, results_file, k):
         """ extracts the top k results for each query from a
             formatted file into a dictionary"""
-        # destination dictionary
-        d = dict()
-        # read file into an array
-        rf = []
+        rs = OrderedDict()
+        all_results = []
         for l in results_file:
-            rf.append(l)
-        # extract the top 100 results for each query and add
-        # them to a dictionary of top results, with query number as key
-        for i in range(201, 251):  # TODO query nums should not be hard coded
-            group = [line.strip() for line in rf if
+            all_results.append(l)
+        for i in range(201, 251):
+            group = [line.split() for line in all_results if
                      line.startswith(str(i))][:k]
-            # some queries don't exist, so check to make sure group is
-            # not empty before adding them to the top_results dictionary
             if len(group) > 0:
-                # list of clueweb doc ids
-                # names = []
-                for g in group:
-                    doc = VecObject()
-                    p = g.split()
-                    doc.ID = p[2]
-                # TODO check this, might be an error
-                d[i] = doc
-        return d
+                doc = []
+                for subgroup in group:
+                    doc.append(subgroup[2])
+                rs[i] = doc
+        return rs
 
     def top_results_from_file_with_bm25(self, results_file, docs, k):
         """ extracts the top k results for each query from a
