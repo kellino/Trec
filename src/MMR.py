@@ -1,13 +1,14 @@
 #!/usr/bin/python2.7
 from filehandler import FileHandler
-from math import log
+from math import log10, sqrt
 import numpy as np
+from collections import OrderedDict
 from ast import literal_eval
 
 DEBUG = True
-queries = dict()
-docs = dict()
-top_results = dict()
+queries = OrderedDict()
+docs = OrderedDict()
+top_results = OrderedDict()
 idfs = dict()
 
 
@@ -41,22 +42,30 @@ class MMR():
                 print queryNo, v.ID, k
 
     def get_similarity(self, query, doc):
-        # make a numpy array of terms and term frequencies
-        d_matrix = np.array([doc.terms, doc.term_frequencies])
-        # term frequencies of those terms present in both query and doc
-        intersection = []
-        for q in query.terms:
-            if q in d_matrix[0]:
-                i = np.nonzero(d_matrix[0] == q)
-                # the triple indexing here seems strange, but numpy returns a
-                # matrix rather than an int if we index it twice, so the third
-                # '0' index extracts the result from its context
-                # intersection.append(d_matrix[1][i][0])
-                tf = 1 + log(d_matrix[1][i][0])
-                intersection.append(tf)
+        # log frequency weighting of doc vector
+        lfw_of_doc = []
+        # log freqency weighting of query vector, as all query terms appear
+        # only once in the vector this is a slightly redundant calculation
+        # for this exercise, but it adds flexibility
+        lfw_of_query = [1 + log10(q) for q in query.terms[0]]
+        for q in query.terms[0]:
+            if q in doc.terms[0]:
+                i = np.nonzero(doc.terms[0] == q)[0][0]
+                tf = 1 + log10(doc.terms[1][i])
+                lfw_of_doc.append(tf)
             else:
-                intersection.append(0)
-        print intersection
+                # term is not in doc vector, therefore 0
+                lfw_of_doc.append(0)
+        normalizer_doc = sqrt(sum(map((lambda x: x*x), lfw_of_doc)))
+        if normalizer_doc == 0:
+            # there is no cosine similarity, so return 0 now
+            return 0
+        else:
+            normalizer_query = sqrt(sum(map((lambda x: x*x), lfw_of_query)))
+            n_doc = [t / normalizer_doc for t in lfw_of_doc]
+            n_query = [t / normalizer_query for t in lfw_of_query]
+            return sum([x * y for x, y in zip(n_doc, n_query)])
+
 
 if __name__ == '__main__':
     f = FileHandler()
@@ -70,12 +79,13 @@ if __name__ == '__main__':
     with open('./idfs_cached', 'r') as idf_file:
         s = idf_file.read()
         idfs = literal_eval(s)
-    f.fill_dictionary(doc_file, docs)
-    f.fill_dictionary(query_file, queries)
+    f.fill_dict_np(doc_file, docs)
+    f.fill_dict_np(query_file, queries)
     top_results = f.top_results_from_file(results_file, 100)
     f.close_file(query_file)
     f.close_file(doc_file)
     f.close_file(results_file)
     for k, query in queries.iteritems():
         for d, doc in docs.iteritems():
-            M.get_similarity(query, doc)
+            cos = M.get_similarity(query, doc)
+            print k, doc.ID, cos
