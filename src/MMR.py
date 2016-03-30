@@ -3,38 +3,30 @@ from filehandler import FileHandler
 from math import log10, sqrt
 import numpy as np
 from collections import OrderedDict
+import operator
 from ast import literal_eval
 
 queries = OrderedDict()
 docs = dict()
 idfs = dict()
+top = OrderedDict()
 
 
 class MMR():
 
-    def calc_mmr(self, queryNo, lam):
-        ordered = dict()
-        # check that the query exists in top_results, if not, exit the function
-        if top_results.get(queryNo) is None:
-            pass
-        else:
-            # all the top k vector objects for queryNo
-            results = [docs[top_results.get(queryNo)[i]] for i in range(
-                len(top_results.get(queryNo)))]
-            # the query vector under consideration
-            query = (queries.get(str(queryNo)))
-            # calculate the mmr for each doc in relation to the query
-            for i in range(100):
-                if len(ordered) > 0:
-                    sim = self._get_similarity(query, results[i])
-                    sim_max = max(map(
-                        (lambda (k, v): self._get_similarity
-                            (results[i], v)), ordered.iteritems()))
-                    mmr = (lam * sim) - ((1 - lam) * sim_max)
-                    ordered[mmr] = results[i]
+    def calc_mmr(self, query, lamba_value):
+        scored = dict()
+        to_check = top.get(int(query.ID))
+        if to_check:
+            for doc in to_check:
+                if len(scored) == 0:
+                    scored[doc] = lamba_value * self.get_similarity(query, doc)
                 else:
-                    sim_max = self._get_similarity(query, results[i])
-                    ordered[sim_max] = results[i]
+                    in_dict = [k for k, v in scored.iteritems()]
+                    scored[doc] = lamba_value * self.get_similarity(query, doc) - (1 - lamba_value) * max(map(lambda x: self.get_similarity(doc, x), in_dict))
+            sorted_scores = reversed(sorted(scored.items(), key=operator.itemgetter(1)))
+            for score in sorted_scores:
+                print query.ID, score[0].ID, score[1]
 
     def get_similarity(self, query, doc):
         # log frequency weighting of doc vector
@@ -73,18 +65,22 @@ if __name__ == '__main__':
         idfs = literal_eval(s)
     f.fill_dict_np(doc_file, docs)
     f.fill_dict_np(query_file, queries)
-    top_results = f.top_results_from_file(results_file, 100)
     # tidy up
     f.close_file(query_file)
     f.close_file(doc_file)
-    f.close_file(results_file)
 
-    # main program loop starts here
+    # main starts here
+    # get the top results for each query (as a string) and fill and ordered
+    # dictionary with the results as vector objects
+    top_results = f.top_results_from_file(results_file, 100)
+    # tidy up
+    f.close_file(results_file)
     for k, result in top_results.iteritems():
-        top = []
+        group = []
         for r in result:
-            top.append(docs.get(r))
-        for q in queries.iteritems():
-            for t in top:
-                cos = M.get_similarity(q[1], t)
-                print q[1].ID, t.ID, cos
+            group.append(docs.get(r))
+        top[k] = group
+    # for k, v in top.iteritems():
+        # print k, len(v)
+    for i in range(201, 251):
+        M.calc_mmr(queries.get(str(i)), 0.5)
