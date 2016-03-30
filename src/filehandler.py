@@ -1,12 +1,13 @@
 #!/usr/bin/python2.7
 import subprocess
 from sys import exit
-from fileobjects import VecObject, Doc
+import numpy as np
+from fileobjects import VecObject, Doc, VecObj2
 
 
 class FileHandler():
 
-    def find_file(self, search, extension):
+    def find_file(self, search, extension=None):
         # not very portable solution to finding the files on the system,
         # should work on linux/mac and probably cygwin as well
         try:
@@ -28,6 +29,21 @@ class FileHandler():
             except IOError:
                 print "unable to close file"
                 exit()
+
+    def fill_dict_np(self, filename, dictionary):
+        for line in filename:
+            parts = line.split()
+            new = VecObj2()
+            new.ID = parts[0].strip()
+            term_list = []
+            term_frequencies = []
+            for part in parts[1:]:
+                if ':' in part:
+                    nums = part.split(':')
+                    term_list.append(int(nums[0]))
+                    term_frequencies.append(int(nums[1]))
+            new.terms = np.array([term_list, term_frequencies])
+            dictionary[parts[0]] = new
 
     def fill_dictionary(self, filename, dictionary):
         """ takes an open (formatted) file and a dictionary and sets the first
