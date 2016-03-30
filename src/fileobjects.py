@@ -12,6 +12,13 @@ class VecObject():
         self.term_frequencies = term_frequencies
 
 
+# experiment! Terms will be a pandas dataframe
+class VecObj2():
+    def __init__(self, ID=None, terms=None):
+        self.ID = ID
+        self.terms = terms
+
+
 class Doc():
     # class specifically for use with the portfolio implementation
     def __init__(self, ID=None, terms=None, term_frequencies=None, bm25=None, altered=None):
