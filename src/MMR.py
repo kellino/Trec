@@ -5,10 +5,8 @@ import numpy as np
 from collections import OrderedDict
 from ast import literal_eval
 
-DEBUG = True
 queries = OrderedDict()
-docs = OrderedDict()
-top_results = OrderedDict()
+docs = dict()
 idfs = dict()
 
 
@@ -37,17 +35,11 @@ class MMR():
                 else:
                     sim_max = self._get_similarity(query, results[i])
                     ordered[sim_max] = results[i]
-        if DEBUG:
-            for k, v in ordered.iteritems():
-                print queryNo, v.ID, k
 
     def get_similarity(self, query, doc):
         # log frequency weighting of doc vector
         lfw_of_doc = []
-        # log freqency weighting of query vector, as all query terms appear
-        # only once in the vector this is a slightly redundant calculation
-        # for this exercise, but it adds flexibility
-        lfw_of_query = [1 + log10(q) for q in query.terms[0]]
+        lfw_of_query = [1 + log10(q) for q in query.terms[1]]
         for q in query.terms[0]:
             if q in doc.terms[0]:
                 i = np.nonzero(doc.terms[0] == q)[0][0]
@@ -68,24 +60,31 @@ class MMR():
 
 
 if __name__ == '__main__':
+    # initialize everything
     f = FileHandler()
     M = MMR()
     query_file = open(f.find_file('query_term_vectors', '*.dat'))
     doc_file = open(f.find_file('document_term_vectors', '*.dat'))
     results_file = open(r'/home/david/Documents/data_retrieval'
                         r'/coursework/BM25b0.75_0.res')
-    # TODO cache the calculations from the bm25 so we don't have to
-    # keep running the bloody thing. Tidy this code away
+    # TODO check this file exists
     with open('./idfs_cached', 'r') as idf_file:
         s = idf_file.read()
         idfs = literal_eval(s)
     f.fill_dict_np(doc_file, docs)
     f.fill_dict_np(query_file, queries)
     top_results = f.top_results_from_file(results_file, 100)
+    # tidy up
     f.close_file(query_file)
     f.close_file(doc_file)
     f.close_file(results_file)
-    for k, query in queries.iteritems():
-        for d, doc in docs.iteritems():
-            cos = M.get_similarity(query, doc)
-            print k, doc.ID, cos
+
+    # main program loop starts here
+    for k, result in top_results.iteritems():
+        top = []
+        for r in result:
+            top.append(docs.get(r))
+        for q in queries.iteritems():
+            for t in top:
+                cos = M.get_similarity(q[1], t)
+                print q[1].ID, t.ID, cos
