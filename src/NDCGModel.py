@@ -109,4 +109,6 @@ if __name__ == '__main__':
     np.set_printoptions(precision=3, linewidth=120)
     print(ndcg_list)
     print(np.sum(ndcg_list, axis=0))
+    # this last line not working as expected, even though all the data appears
+    # to be correct...
     print(np.mean(ndcg_list, axis=0, dtype=np.float64))
