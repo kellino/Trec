@@ -2,11 +2,10 @@
 import math as m
 import numpy as np
 import copy
-from filehandler_vers2 import FileHandler
+from filehandler import FileHandler
 from fileobjects import Result, Qrel
 
 
-DEBUG = False
 results = []
 ndcg_list = np.empty((48, 7))
 relevancy = dict()
@@ -68,8 +67,6 @@ class NDCG():
                     temp.append(int(result.relevance))
                 else:
                     temp.append(0)
-            if DEBUG:
-                print("{}:".format(group_num))
             return temp
 
     def make_ideal_list(self, rels):
@@ -78,6 +75,7 @@ class NDCG():
         # beginning
         temp = []
         if rels is not None:
+            # make a deep copy, otherwise the original list is sorted in place
             temp = copy.copy(rels)
             temp.sort()
             temp.reverse()
@@ -85,6 +83,7 @@ class NDCG():
 
 
 if __name__ == '__main__':
+    # open files, get data
     f = FileHandler()
     results_file = open(f.find_file("BM25b0.75_0", "*.res").strip())
     relevancy_file = open(f.find_file("qrels.adhoc", "*.txt").strip())
@@ -92,6 +91,7 @@ if __name__ == '__main__':
     calc.gen_results_array(results_file)
     calc.gen_relevancy_dict(relevancy_file)
     calc.assign_relevancy_to_result()
+    # clean up
     f.close_file(results_file)
     f.close_file(relevancy_file)
 
