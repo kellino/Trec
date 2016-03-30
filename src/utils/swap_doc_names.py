@@ -1,6 +1,8 @@
 #!/usr/bin/python
 import sys
 
+# run program with two command line args, the filepath of the results file, and
+# the collection filepath
 results = sys.argv[1]
 collection = sys.argv[2]
 
@@ -37,7 +39,9 @@ def merge_files():
     i = 0
     for i in range(len(line_nums)):
         new_line = original_lines[i].split()
-        print new_line[0] + " " + new_line[1] + " " + coll.get(line_nums[i]) + " " + new_line[3] + " " + new_line[4] + " " + new_line[5]
+        print(new_line[0] + " " + new_line[1] + " " +
+              coll.get(line_nums[i]) + " " + new_line[3] + " " +
+              new_line[4] + " " + new_line[5])
 
 
 if __name__ == '__main__':
