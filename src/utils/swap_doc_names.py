@@ -17,6 +17,7 @@ def get_linenums_from_trec_results():
         original_lines.append(line)
         words = line.split(" ")
         line_nums.append(int(words[2]))
+    f.close()
 
 
 def read_collection_spec():
@@ -28,6 +29,7 @@ def read_collection_spec():
         new_num = words[7].split('.')
         coll[i] = new_num[0]
         i += 1
+    fc.close()
 
 
 def print_collection():
@@ -35,6 +37,8 @@ def print_collection():
         print k, v
 
 
+# slightly lazy, but easier to use a redirection in the shell than open a new
+# file and close it in python
 def merge_files():
     i = 0
     for i in range(len(line_nums)):
