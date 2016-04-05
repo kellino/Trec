@@ -1,3 +1,4 @@
 *.pyc
 *.log
 idfs_cached
+BM25b0.75.res
