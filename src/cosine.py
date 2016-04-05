@@ -8,12 +8,20 @@ class MMR():
     def __init__(self):
         self.pages = dict()
         self.scores = []
+        self.docIDs = []
+        self.queries = []
 
     def get_bm25_scores(self):
         with open('./bm25sample') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
-                self.scores.append((tokens[2], float(tokens[4])))
+                # self.scores.append((tokens[2], float(tokens[4])))
+                self.queries = int(tokens[0])
+                self.docIDs = tokens[2]
+                self.scores = float(tokens[4])
+            self.queries = np.array(self.queries)
+            self.docIDs = np.array(self.docIDs)
+            self.scores = np.array(self.scores)
 
     def get_pages(self):
         with open(r'/home/david/Documents/data_retrieval'
@@ -52,12 +60,6 @@ if __name__ == '__main__':
     m = MMR()
     m.get_bm25_scores()
     m.get_pages()
-    for i in range(len(m.scores) - 1):
-        cosines = []
-        r = m.pages.get(m.scores[i][0])
-        for j in range(i+1, len(m.scores)):
-            tf = m.normalize_vectors(r, m.pages.get(m.scores[j][0]))
-            root = np.array([x for k, x in r.iteritems()])
-            cos = m.get_cosine_similarity(root, tf)
-            cosines.append(cos)
-        print max(cosines)
+    for query in range(201, 251):
+        if query in m.queries:
+            is_query = (m.queries == query)
