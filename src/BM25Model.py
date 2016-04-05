@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 import numpy as np
+from itertools import islice
 
 
 class BM25():
@@ -14,13 +15,18 @@ class BM25():
     def get_doc_vecs(self):
         with open(r'/home/david/Documents/data_retrieval'
                   r'/coursework/document_term_vectors.dat') as ifile:
-            for line in ifile:
-                terms = dict()
-                tokens = line.strip().split()
-                for token in tokens[1:]:
-                    nums = token.strip().split(':')
-                    terms[int(nums[0])] = int(nums[1])
-                self.docs[tokens[0]] = terms
+            while True:
+                next_n_lines = list(islice(ifile, 5000))
+                if not next_n_lines:
+                    break
+                else:
+                    for line in next_n_lines:
+                        terms = dict()
+                        tokens = line.strip().split()
+                        for token in tokens[1:]:
+                            nums = token.strip().split(':')
+                            terms[int(nums[0])] = int(nums[1])
+                        self.docs[tokens[0]] = terms
 
     def get_query_vecs(self):
         with open(r'/home/david/Documents/data_retrieval'
