@@ -1,52 +1,90 @@
-#!/usr/bin/python2.7
-from filehandler import FileHandler
-import pandas as pd
+#!/usr/bin/env python2.7
+import numpy as np
+from scipy import stats
+from itertools import islice
+from operator import itemgetter
 
 
 class Portfolio():
-
     def __init__(self):
-        self.ordered = dict()
-        self.docs = dict()
-        self.queries = dict()
-        self.top_results = dict()
+        self.pages = dict()
+        self.scores = []
+        self.docIDs = []
+        self.queries = []
 
-    def calc_pearson(self, queryNo, doc1, doc2):
-        d1 = pd.Series(doc1.term_frequencies)
-        d2 = pd.Series(doc2.term_frequencies)
-        num = pd.Series.cov(d1, d2)
-        denom = (pd.Series.std(d1) * pd.Series.std(d2))
-        return num / denom
+    def get_bm25_scores(self):
+        with open('./BM25b0.75.res') as ifile:
+            for line in ifile:
+                tokens = line.strip().split()
+                # self.scores.append((tokens[2], float(tokens[4])))
+                self.queries.append(int(tokens[0]))
+                self.docIDs.append(tokens[2])
+                self.scores.append(float(tokens[4]))
+            self.queries = np.array(self.queries)
+            self.docIDs = np.array(self.docIDs)
+            self.scores = np.array(self.scores)
 
-    def calc_mva(self, query, doc, ind):
-        b = 4
-        if len(self.ordered) == 0:
-            doc.altered = (float(doc.bm25)) - (b * ind) - 2*b
-            self.ordered[doc.ID] = doc
-        else:
-            doc.altered = float(doc.bm25) - (b * ind) \
-                - 2*b * (sum(map((lambda x: self.calc_pearson
-                                 (query, doc, x)), self.ordered.values())))
-            self.ordered[doc.ID] = doc
+    def get_pages(self):
+        with open(r'/home/david/Documents/data_retrieval'
+                  r'/coursework/document_term_vectors.dat') as ifile:
+            while True:
+                next_n_lines = list(islice(ifile, 5000))
+                if not next_n_lines:
+                    break
+                else:
+                    for line in next_n_lines:
+                        terms = dict()
+                        tokens = line.strip().split()
+                        for token in tokens[1:]:
+                            nums = token.strip().split(':')
+                            terms[int(nums[0])] = int(nums[1])
+                        self.pages[tokens[0]] = terms
+
+    def normalize_vectors(self, doc1, doc2):
+        # a list of term frequencies of the intersection of doc1 and doc2
+        temp = [v for k, v in doc1.iteritems()]
+        temp2 = []
+        for k, v in doc1.iteritems():
+            if k in doc2:
+                temp2.append(doc1.get(k))
+            else:
+                temp2.append(0)
+        return temp, temp2
+
+    def calc_pearsons(self, doc1, doc2):
+        temp, temp2 = self.normalize_vectors(doc1, doc2)
+        return stats.pearsonr(temp, temp2)[1]
+
+    def run(self, b, query):
+        results = []
+        if query in self.queries:
+            is_query = (self.queries == query)
+            rels = self.docIDs[is_query][:100]
+            scores = self.scores[is_query][:100]
+            for i in range(1, len(rels)):
+                wi = 1.0 / 2**(i)
+                if i == 0:
+                    mva = scores[i] - (b * wi)
+                    results.append((query, rels[i], i, mva))
+                else:
+                    to_compare = [self.pages.get(e) for (a, e, c, d) in results]
+                    order = [c for (a, e, c, d) in results]
+                    mva = scores[i] - (b * wi) - (2 * b * np.sum(map((lambda x, y: (1.0/x**2) * self.calc_pearsons(self.pages.get(rels[i]), y)), order, to_compare)))
+                    results.append((query, rels[i], i, mva))
+        return results
+
 
 if __name__ == '__main__':
-    f = FileHandler()
     p = Portfolio()
-    query_file = open(f.find_file('query_term_vectors', '*.dat'))
-    doc_file = open(f.find_file('document_term_vectors', '*.dat'))
-    results_file = open(r'/home/david/Documents/data_retrieval'
-                        r'/coursework/BM25b0.75_0.res')
-    f.fill_dictionary(doc_file, p.docs)
-    f.fill_dictionary(query_file, p.queries)
-    res = f.top_results_from_file_with_bm25(results_file, p.docs, 100)
-    f.close_file(query_file)
-    f.close_file(doc_file)
-    f.close_file(results_file)
-    for k, v in res.iteritems():
-        i = 0
-        for vi in v:
-            p.calc_mva(k, vi, i)
-            i += 1
-        for m, n in p.ordered.iteritems():
-            print k, m, n.altered
-        p.ordered.clear()
+    p.get_bm25_scores()
+    p.get_pages()
+    lines = []
+    for query in range(201, 251):
+        res = p.run(4, query)
+        rs = sorted(res, key=itemgetter(3))
+        rs.reverse()
+        for r in rs:
+            line = "{} Q0 {} {} {} Portfolio4".format(query, r[1], r[2], r[3])
+            lines.append(line)
+    with open('./PortfolioScoringB4.res', 'a') as ifile:
+        ifile.writelines("%s\n" % line for line in lines)
