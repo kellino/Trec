@@ -68,7 +68,7 @@ class Portfolio():
                     results.append((query, rels[i], i, mva))
                 else:
                     to_compare = [self.pages.get(e) for (a, e, c, d) in results]
-                    order = [c for (a, e, c, d) in results]
+                    order = [i for i in range(1, len(results)+1)]
                     mva = scores[i] - (b * wi) - (2 * b * np.sum(map((lambda x, y: (1.0/x**2) * self.calc_pearsons(self.pages.get(rels[i]), y)), order, to_compare)))
                     results.append((query, rels[i], i, mva))
         return results
@@ -78,13 +78,16 @@ if __name__ == '__main__':
     p = Portfolio()
     p.get_bm25_scores()
     p.get_pages()
-    lines = []
-    for query in range(201, 251):
-        res = p.run(4, query)
-        rs = sorted(res, key=itemgetter(3))
-        rs.reverse()
-        for r in rs:
-            line = "{} Q0 {} {} {} Portfolio4".format(query, r[1], r[2], r[3])
-            lines.append(line)
-    with open('./PortfolioScoringB4.res', 'a') as ifile:
-        ifile.writelines("%s\n" % line for line in lines)
+    bs = [4, -4]
+    for b in bs:
+        lines = []
+        for query in range(201, 251):
+            res = p.run(b, query)
+            rs = sorted(res, key=itemgetter(3))
+            rs.reverse()
+            for r in rs:
+                line = "{} Q0 {} {} {} Portfolio{}".format(
+                    query, r[1], r[2], r[3], b)
+                lines.append(line)
+        with open('./PortfolioScoringBP{}.res'.format(b), 'a') as ifile:
+            ifile.writelines("%s\n" % line for line in lines)
