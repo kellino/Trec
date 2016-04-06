@@ -41,6 +41,7 @@ class MMR():
                         self.pages[tokens[0]] = terms
 
     def normalize_vectors(self, doc1, doc2):
+        # a list of term frequencies of the intersection of doc1 and doc2
         temp = []
         for k, v in doc1.iteritems():
             if k in doc2:
@@ -50,14 +51,11 @@ class MMR():
         return temp
 
     def get_cosine_similarity(self, doc1, doc2):
-        return spatial.distance.cosine(doc1, doc2)
+        temp1 = [x for k, x in doc1.iteritems()]
+        temp2 = self.normalize_vectors(doc1, doc2)
+        return 1 - spatial.distance.cosine(temp1, temp2)
 
-if __name__ == '__main__':
-    m = MMR()
-    m.get_bm25_scores()
-    m.get_pages()
-    l = 0.25
-    for query in range(201, 251):
+    def run(self, l, query):
         results_set = []
         if query in m.queries:
             is_query = (m.queries == query)
@@ -69,10 +67,25 @@ if __name__ == '__main__':
             for i in range(len(rels)):
                 if i == 0:
                     new_score = l * n_scores[i] - (1 - l)
+                    # results set contains a tuple of the form
+                    # (query numbers, docID, adjusted score)
                     results_set.append((query, rels[i], new_score))
                 else:
-                    new_score = (l * n_scores[i] - ((1 - l) * max(map((lambda(a, b, x): m.get_cosine_similarity(n_scores[i], x)), results_set))))
+                    # fetch tf dict of next document
+                    to_score = m.pages.get(rels[i])
+                    # get the term frequency vector from the to_score dict
+                    new_score = (l * n_scores[i] - (1 - l) * max
+                                 (map((lambda (a, b, c): m.get_cosine_similarity
+                                       (to_score, m.pages.get(b))),
+                                      results_set)))
                     results_set.append((query, rels[i], new_score))
-            print results_set
-    # with open('./mmr_results', 'a') as f:
-        # f.writelines("%s\n" % p for p in cosines)
+        return results_set
+
+if __name__ == '__main__':
+    m = MMR()
+    m.get_bm25_scores()
+    m.get_pages()
+    l = 0.5
+    for query in range(201, 251):
+        res = m.run(l, query)
+        print res
