@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 import numpy as np
 from scipy import spatial
+from sklearn.preprocessing import normalize
 from itertools import islice
 
 
@@ -51,28 +52,27 @@ class MMR():
     def get_cosine_similarity(self, doc1, doc2):
         return spatial.distance.cosine(doc1, doc2)
 
-    def calc_mmr(self, l, doc, bm25, returns):
-        mmr = (l * bm25 - (1 - l) *
-               max(map(lambda d: self.get_cosine_similarity(doc, d)), returns))
-        return mmr
-
 if __name__ == '__main__':
-    cosines = []
     m = MMR()
     m.get_bm25_scores()
     m.get_pages()
+    l = 0.25
     for query in range(201, 251):
-        c = []
+        results_set = []
         if query in m.queries:
             is_query = (m.queries == query)
             rels = m.docIDs[is_query]
-            for i in range(len(rels) - 1):
-                root = m.pages.get(rels[i])
-                for j in range(i+1, len(rels)):
-                    temp = m.normalize_vectors(root, m.pages.get(rels[j]))
-                    r = [x for k, x in root.iteritems()]
-                    cos = m.get_cosine_similarity(r, temp)
-                    c.append((query, m.docIDs[i], m.docIDs[j], cos))
-            cosines.append(c)
-    with open('./mmr_results', 'a') as f:
-        f.writelines("%s\n" % p for p in cosines)
+            scores = m.scores[is_query]
+            n_scores = normalize(scores.reshape(1, -1))[0]
+            # as there is no comparison to make, add the first doc from rels
+            # to the new results set
+            for i in range(len(rels)):
+                if i == 0:
+                    new_score = l * n_scores[i] - (1 - l)
+                    results_set.append((query, rels[i], new_score))
+                else:
+                    new_score = (l * n_scores[i] - ((1 - l) * max(map((lambda(a, b, x): m.get_cosine_similarity(n_scores[i], x)), results_set))))
+                    results_set.append((query, rels[i], new_score))
+            print results_set
+    # with open('./mmr_results', 'a') as f:
+        # f.writelines("%s\n" % p for p in cosines)
