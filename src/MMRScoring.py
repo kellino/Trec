@@ -60,8 +60,8 @@ class MMR():
         results_set = []
         if query in m.queries:
             is_query = (m.queries == query)
-            rels = m.docIDs[is_query]
-            scores = m.scores[is_query]
+            rels = m.docIDs[is_query][:100]
+            scores = m.scores[is_query][:100]
             n_scores = normalize(scores.reshape(1, -1))[0]
             # as there is no comparison to make, add the first doc from rels
             # to the new results set
