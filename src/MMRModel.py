@@ -3,6 +3,7 @@ import numpy as np
 from scipy import spatial
 from sklearn.preprocessing import normalize
 from itertools import islice
+from operator import itemgetter
 
 
 class MMR():
@@ -85,7 +86,10 @@ if __name__ == '__main__':
     m = MMR()
     m.get_bm25_scores()
     m.get_pages()
-    l = 0.5
-    for query in range(201, 251):
+    l = 0.25
+    for query in range(201, 202):
         res = m.run(l, query)
-        print res
+        rs = sorted(res, key=itemgetter(2))
+        rs.reverse()
+        for r in rs:
+            print r
