@@ -40,10 +40,12 @@ class AlphaNDCG():
         self.subtopic = np.array(self.subtopic)
         self.judgement = np.array(self.judgement)
 
-    def calc_alpha_dcg(self, js, alpha, k=None):
-        seen = dict()
-        gain = []
+    def calc_alpha_dcg(self, js, alpha, k):
+        seen = dict()   # count of seen nuggets
+        gain = []   # cumulative gain here
+        # iterate through tuples
         for i in range(len(js)):
+            # special case for first element
             if i == 0:
                 gain.append(np.sum(js[i][2]) * (1 - alpha)**0)
                 for s, x in enumerate(js[i][2]):
@@ -74,9 +76,13 @@ class AlphaNDCG():
             # tuple of query num, doc id and list of binary judgements where
             # the index represents the subtopic
             js.append((query, c, judgements))
+        # # main loop
         for k in [1, 5, 10, 20, 30, 40, 50]:
             dcg = self.calc_alpha_dcg(js, alpha, k)
-            print dcg
+            ideal = sorted(js, key=lambda (a, b, c): sum(c))
+            ideal.reverse()
+            idcg = self.calc_alpha_dcg(ideal, alpha, k)
+            print query, c, k, dcg / idcg
 
 
 if __name__ == '__main__':
