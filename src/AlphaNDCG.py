@@ -49,16 +49,26 @@ class AlphaNDCG():
         # generates a list of docs with judgements for collection in
         # the following form docID (as ranked by bm25) [1 1 1 1 1 0]
         # = judgements for each subtopic, in order
+        js = []
         for c in collection:
             is_c = (collection == c)
             judgements = judgement_list[is_c]
             judgements[judgements > 1] = 1
-            print query, c, list(judgements)
+            # tuple of query num, doc id and list of binary judgements where
+            # the index represents the subtopic
+            js.append((query, c, judgements))
+        acc = []
+        for i in range(len(js)):
+            if i == 0:
+                acc = np.array(js[i][2])
+            else:
+                acc = np.add(acc, np.array(js[i][2]))
+            print acc
 
 
 if __name__ == '__main__':
     a = AlphaNDCG()
     a.get_bm25_scores()
     a.get_qrels()
-    for i in range(201, 251):
+    for i in range(201, 202):
         a.run(i)
