@@ -45,14 +45,20 @@ class AlphaNDCG():
         # isolate the part of ndeval which belongs to the query number
         belongs_to_query = (self.ndeval_query == query)
         collection = self.ndeval_docID[belongs_to_query]
+        judgement_list = self.judgement[belongs_to_query]
+        # generates a list of docs with judgements for collection in
+        # the following form docID (as ranked by bm25) [1 1 1 1 1 0]
+        # = judgements for each subtopic, in order
         for c in collection:
             is_c = (collection == c)
-            judgements = self.judgement[is_c]
-            print c, judgements
+            judgements = judgement_list[is_c]
+            judgements[judgements > 1] = 1
+            print query, c, list(judgements)
+
 
 if __name__ == '__main__':
     a = AlphaNDCG()
     a.get_bm25_scores()
     a.get_qrels()
-    for i in range(201, 202):
+    for i in range(201, 251):
         a.run(i)
