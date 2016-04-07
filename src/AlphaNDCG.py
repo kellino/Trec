@@ -41,7 +41,7 @@ class AlphaNDCG():
         self.subtopic = np.array(self.subtopic)
         self.judgement = np.array(self.judgement)
 
-    def run(self, query):
+    def run(self, query, alpha):
         # isolate the part of ndeval which belongs to the query number
         belongs_to_query = (self.ndeval_query == query)
         collection = self.ndeval_docID[belongs_to_query]
@@ -57,18 +57,27 @@ class AlphaNDCG():
             # tuple of query num, doc id and list of binary judgements where
             # the index represents the subtopic
             js.append((query, c, judgements))
-        acc = []
+        seen = dict()
+        gain = []
         for i in range(len(js)):
             if i == 0:
-                acc = np.array(js[i][2])
+                gain.append(np.sum(js[i][2]) * (1 - alpha)**0)
+                for s, x in enumerate(js[i][2]):
+                    seen[s] = x
             else:
-                acc = np.add(acc, np.array(js[i][2]))
-            print acc
-
+                e = 0
+                for s, x in enumerate(js[i][2]):
+                    if x == 1:
+                        e += seen.get(s)
+                        seen[s] += 1
+                new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
+                gain.append(new_gain)
+        for g in gain:
+            print g
 
 if __name__ == '__main__':
     a = AlphaNDCG()
     a.get_bm25_scores()
     a.get_qrels()
     for i in range(201, 202):
-        a.run(i)
+        a.run(i, 0.1)
