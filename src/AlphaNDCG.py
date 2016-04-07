@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 import numpy as np
-# from itertools import islice
 
 
 class AlphaNDCG():
@@ -14,7 +13,7 @@ class AlphaNDCG():
         self.subtopic = []
         self.judgement = []
 
-    def get_bm25_scores(self):
+    def get_scores(self):
         with open('./BM25b0.75.res') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
@@ -41,6 +40,24 @@ class AlphaNDCG():
         self.subtopic = np.array(self.subtopic)
         self.judgement = np.array(self.judgement)
 
+    def calc_alpha_dcg(self, js, alpha, k=None):
+        seen = dict()
+        gain = []
+        for i in range(len(js)):
+            if i == 0:
+                gain.append(np.sum(js[i][2]) * (1 - alpha)**0)
+                for s, x in enumerate(js[i][2]):
+                    seen[s] = x
+            else:
+                e = 0
+                for s, x in enumerate(js[i][2]):
+                    if x == 1:
+                        e += seen.get(s)
+                        seen[s] += 1
+                new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
+                gain.append(new_gain)
+        return np.sum(gain[:k])
+
     def run(self, query, alpha):
         # isolate the part of ndeval which belongs to the query number
         belongs_to_query = (self.ndeval_query == query)
@@ -57,27 +74,14 @@ class AlphaNDCG():
             # tuple of query num, doc id and list of binary judgements where
             # the index represents the subtopic
             js.append((query, c, judgements))
-        seen = dict()
-        gain = []
-        for i in range(len(js)):
-            if i == 0:
-                gain.append(np.sum(js[i][2]) * (1 - alpha)**0)
-                for s, x in enumerate(js[i][2]):
-                    seen[s] = x
-            else:
-                e = 0
-                for s, x in enumerate(js[i][2]):
-                    if x == 1:
-                        e += seen.get(s)
-                        seen[s] += 1
-                new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
-                gain.append(new_gain)
-        for g in gain:
-            print g
+        for k in [1, 5, 10, 20, 30, 40, 50]:
+            dcg = self.calc_alpha_dcg(js, alpha, k)
+            print dcg
+
 
 if __name__ == '__main__':
     a = AlphaNDCG()
-    a.get_bm25_scores()
+    a.get_scores()
     a.get_qrels()
-    for i in range(201, 202):
+    for i in range(201, 251):
         a.run(i, 0.1)
