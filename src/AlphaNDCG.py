@@ -102,21 +102,46 @@ class AlphaNDCG():
                 at_k.append(0.0)
         return at_k
 
+    def print_out(self, model, param, ks, alpha, new_file):
+        totals = []
+        for i in range(201, 251):
+            if i in a.ndeval_query:
+                at_k = a.run(i, alpha, ks)
+                totals.append(at_k)
+            means = np.mean(totals, axis=0)
+        with open(new_file, 'a') as f:
+            f.write('{}\n'.format(model))
+            f.write('lambda = {}\n'.format(param))
+            f.write('alpha | K |  alpha-NDCG@K\n')
+            for j in range(len(ks)):
+                f.write('{}\t{}\t{:.3f}\n'.format(alpha, ks[j], means[j]))
+            f.write('\n')
+
 
 if __name__ == '__main__':
     a = AlphaNDCG()
-    a.get_scores('./PortfolioScoringBP4.res')
     a.get_qrels()
     ks = [1, 5, 10, 20, 30, 40, 50]
-    totals = []
-    for i in range(201, 251):
-        if i in a.ndeval_query:
-            at_k = a.run(i, 0.1, ks)
-            totals.append(at_k)
-        means = np.mean(totals, axis=0)
-    with open('mmr_ndcg.txt', 'a') as f:
-        f.write('MMR\n')
-        f.write('lambda = 0.25\n')
-        f.write('alpha | K |  alpha-NDCG@K\n')
-        for j in range(len(ks)):
-            f.write('0.1\t{}\t{:.3f}\n'.format(ks[j], means[j]))
+    alphas = [0.1, 0.5, 0.9]
+
+    a.get_scores('./MMRScoring0.25.res')
+    for alpha in alphas:
+        a.print_out('MMR', 0.25, ks, alpha, 'mmr_ndcg.txt')
+
+    a = AlphaNDCG()
+    a.get_qrels()
+    a.get_scores('./MMRScoring0.5.res')
+    for alpha in alphas:
+        a.print_out('MMR', 0.5, ks, alpha, 'mmr_ndcg.txt')
+
+    a = AlphaNDCG()
+    a.get_qrels()
+    a.get_scores('./PortfolioScoringBP4.res')
+    for alpha in alphas:
+        a.print_out('Portfolio', 4, ks, alpha, 'portfolio_ndcg.txt')
+
+    a = AlphaNDCG()
+    a.get_qrels()
+    a.get_scores('./PortfolioScoringBP-4.res')
+    for alpha in alphas:
+        a.print_out('Portfolio', -4, ks, alpha, 'portfolio_ndcg.txt')
