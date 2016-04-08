@@ -13,8 +13,7 @@ class NDCG():
     def open_adhoc(self):
         # using with means it is not necessary to worry about closing the file
         # properly, the python runtime is guarenteed to take care it it
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/qrels.adhoc.txt') as ifile:
+        with open(r'./data/qrels.adhoc.txt') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
                 key = tokens[0] + tokens[2]
@@ -22,8 +21,7 @@ class NDCG():
                     self.relevancies[key] = int(tokens[3])
 
     def open_results(self):
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/BM25b0.75_0.res') as ifile:
+        with open(r'./data/BM25b0.75_0.res') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
                 self.query_list.append(int(tokens[0]))
@@ -32,6 +30,7 @@ class NDCG():
                     self.relevancies.get(tokens[0]+tokens[2]))
 
     def calc_dcg(self, rels, k):
+        # k == 1 is almost a special case, as log damping does not apply to it
         if k == 1:
             return rels[0]
         else:
@@ -49,6 +48,7 @@ if __name__ == '__main__':
     n.relevance_list = np.array(n.relevance_list)
 
     ks = []
+    # list of values of k for ndcg@k
     k_values = [1, 5, 10, 20, 30, 40, 50]
     for k in k_values:
         accumulator = []
@@ -66,6 +66,7 @@ if __name__ == '__main__':
                     ndcg = 0.0
                 accumulator.append(ndcg)
         ks.append(np.mean(accumulator, axis=0))
+    # text formatting for file
     with open('./bm25_ndcg.txt', 'w') as f:
         f.write('bm25\n')
         f.write('K | NDCG@K\n')

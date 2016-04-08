@@ -2,6 +2,10 @@
 from __future__ import division
 import numpy as np
 
+# all the infomation for this was taken from the research paper listed in the
+# coursework description. I was unable to find much additional information on
+# the internet, despite doing numerous searches
+
 
 class AlphaNDCG():
     def __init__(self):
@@ -15,9 +19,9 @@ class AlphaNDCG():
         self.judgement = []
 
     def get_scores(self, filepath):
-        """ parses a trec format results file and stores the details in
-            multiple numpy arrays
-            Format: query, Q0, docID, rank, score, model """
+        # parses a trec format results file and stores the details in
+        # multiple numpy arrays
+        # Format: query, Q0, docID, rank, score, model
         with open(filepath) as ifile:
             for line in ifile:
                 tokens = line.strip().split()
@@ -27,9 +31,9 @@ class AlphaNDCG():
         self.query_no = np.array(self.query_no)
 
     def get_qrels(self):
-        """ parses then ndeval qrels file """
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/qrels.ndeval.txt') as ifile:
+        # parses then ndeval qrels file, assuming that is it correctly
+        # formatted
+        with open(r'./data/qrels.ndeval.txt') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
                 # query number
@@ -40,12 +44,17 @@ class AlphaNDCG():
                 self.subtopic.append(int(tokens[1]))
                 # judgement
                 self.judgement.append(int(tokens[3]))
+        # turn everything into numpy arrays
         self.ndeval_query = np.array(self.ndeval_query)
         self.ndeval_docID = np.array(self.ndeval_docID)
         self.subtopic = np.array(self.subtopic)
         self.judgement = np.array(self.judgement)
 
     def calc_alpha_dcg(self, js, alpha, k):
+        # this function works for both dcg and idcg, though the code itself if
+        # rather difficult to follow and a little ugly. The main thing to
+        # understand is the 'js' is a list of tuple values, of the form
+        # (query, doc, [judgements])
         seen = dict()   # count of seen nuggets
         gain = []   # cumulative gain here
         # iterate through tuples
@@ -103,6 +112,9 @@ class AlphaNDCG():
         return at_k
 
     def print_out(self, model, param, ks, alpha, new_file):
+        # in many ways, this is the main function of the script, calling run()
+        # with its various parameters and dumping the output to an
+        # appropriately named file
         totals = []
         for i in range(201, 251):
             if i in a.ndeval_query:

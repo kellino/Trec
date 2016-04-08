@@ -14,8 +14,8 @@ class BM25():
         self.avdl = 0
 
     def get_doc_vecs(self):
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/document_term_vectors.dat') as ifile:
+        # parses the doc in a lazy fashion, reading 5000 lines at a time
+        with open(r'./data/document_term_vectors.dat') as ifile:
             while True:
                 next_n_lines = list(islice(ifile, 5000))
                 if not next_n_lines:
@@ -30,8 +30,9 @@ class BM25():
                         self.docs[tokens[0]] = terms
 
     def get_query_vecs(self):
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/query_term_vectors.dat') as ifile:
+        # parses the query term vectors, saving the term frequency also, even
+        # if in these examples it is not important
+        with open(r'./data/query_term_vectors.dat') as ifile:
             for line in ifile:
                 terms = dict()
                 tokens = line.strip().split()
@@ -41,6 +42,7 @@ class BM25():
                 self.queries[tokens[0]] = terms
 
     def get_word_total(self):
+        # get the total number of words in the collection
         for k, v in self.docs.iteritems():
             self.total_words += np.sum([x for w, x in v.iteritems()])
 
@@ -48,9 +50,11 @@ class BM25():
         self.avdl = self.total_words / len(self.docs)
 
     def get_collection_size(self):
+        # number of docs in collection
         self.N = len(self.docs)
 
     def get_term_appearances(self):
+        # tf of words in collection
         for k, vec in self.docs.iteritems():
             for w, f in vec.iteritems():
                 if w in self.term_appearances:
@@ -59,6 +63,9 @@ class BM25():
                     self.term_appearances[w] = 1
 
     def calc_bm25(self, query, doc, b, k):
+        # this calculation uses the version of bm25 as found on the wikipedia
+        # page. The choice of log2 is fairly abritrary, as any log seems to
+        # produce the same ordering, but with different magnitude scores
         score = 0
         doc_length = sum([v for x, v in doc.iteritems()])
         for q, v in query.iteritems():
@@ -72,6 +79,7 @@ class BM25():
         return score
 
     def run(self):
+        # main function
         doc_collection = []
         for query in sorted(self.queries.iterkeys()):
             results = []

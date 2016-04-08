@@ -6,7 +6,7 @@ from sklearn.preprocessing import normalize
 from itertools import islice
 from operator import itemgetter
 
-# very slow implementation. TODO find some optimizations
+# Not very fast. Run at your own risk
 
 
 class MMR():
@@ -17,10 +17,11 @@ class MMR():
         self.queries = []
 
     def get_bm25_scores(self):
+        # not the file in the data folder, but the results produced from the
+        # bm25 script
         with open('./BM25b0.75.res') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
-                # self.scores.append((tokens[2], float(tokens[4])))
                 self.queries.append(int(tokens[0]))
                 self.docIDs.append(tokens[2])
                 self.scores.append(float(tokens[4]))
@@ -29,8 +30,8 @@ class MMR():
             self.scores = np.array(self.scores)
 
     def get_pages(self):
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/document_term_vectors.dat') as ifile:
+        # gets and parses doc term vectors
+        with open(r'./data/document_term_vectors.dat') as ifile:
             while True:
                 next_n_lines = list(islice(ifile, 5000))
                 if not next_n_lines:
@@ -55,11 +56,13 @@ class MMR():
         return temp
 
     def get_cosine_similarity(self, doc1, doc2):
+        # using scipy here for efficiency reasons
         temp1 = [x for k, x in doc1.iteritems()]
         temp2 = self.normalize_vectors(doc1, doc2)
         return 1 - spatial.distance.cosine(temp1, temp2)
 
     def run(self, l, query):
+        # main function
         results_set = []
         if query in m.queries:
             is_query = (m.queries == query)

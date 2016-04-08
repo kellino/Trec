@@ -19,7 +19,6 @@ class Portfolio():
         with open('./BM25b0.75.res') as ifile:
             for line in ifile:
                 tokens = line.strip().split()
-                # self.scores.append((tokens[2], float(tokens[4])))
                 self.queries.append(int(tokens[0]))
                 self.docIDs.append(tokens[2])
                 self.scores.append(float(tokens[4]))
@@ -28,8 +27,7 @@ class Portfolio():
             self.scores = np.array(self.scores)
 
     def get_pages(self):
-        with open(r'/home/david/Documents/data_retrieval'
-                  r'/coursework/document_term_vectors.dat') as ifile:
+        with open(r'./data/document_term_vectors.dat') as ifile:
             while True:
                 next_n_lines = list(islice(ifile, 5000))
                 if not next_n_lines:
@@ -59,6 +57,7 @@ class Portfolio():
         return stats.pearsonr(temp, temp2)[1]
 
     def run(self, b, query):
+        # main function
         results = []
         if query in self.queries:
             is_query = (self.queries == query)
@@ -70,9 +69,12 @@ class Portfolio():
                     mva = scores[i] - (b * wi)
                     results.append((query, rels[i], i+1, mva))
                 else:
-                    to_compare = [self.pages.get(e) for (a, e, c, d) in results]
+                    to_compare = [self.pages.get(e)
+                                  for (a, e, c, d) in results]
                     order = [j for j in range(1, len(results)+1)]
-                    mva = scores[i] - (b * wi) - (2 * b * np.sum(map((lambda x, y: (1.0/x**2) * self.calc_pearsons(self.pages.get(rels[i]), y)), order, to_compare)))
+                    mva = scores[i] - (b * wi) - (2 * b * np.sum(
+                        map((lambda x, y: (1.0/x**2) * self.calc_pearsons(
+                            self.pages.get(rels[i]), y)), order, to_compare)))
                     results.append((query, rels[i], i+1, mva))
         return results
 
