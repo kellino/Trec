@@ -1,8 +1,11 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 import numpy as np
 from scipy import stats
 from itertools import islice
 from operator import itemgetter
+
+# even slower than MMR!!!
 
 
 class Portfolio():
@@ -61,16 +64,16 @@ class Portfolio():
             is_query = (self.queries == query)
             rels = self.docIDs[is_query][:100]
             scores = self.scores[is_query][:100]
-            for i in range(1, len(rels)):
-                wi = 1.0 / 2**(i)
+            for i in range(len(rels)):
+                wi = 1.0 / 2**(i+1)
                 if i == 0:
                     mva = scores[i] - (b * wi)
-                    results.append((query, rels[i], i, mva))
+                    results.append((query, rels[i], i+1, mva))
                 else:
                     to_compare = [self.pages.get(e) for (a, e, c, d) in results]
-                    order = [i for i in range(1, len(results)+1)]
+                    order = [j for j in range(1, len(results)+1)]
                     mva = scores[i] - (b * wi) - (2 * b * np.sum(map((lambda x, y: (1.0/x**2) * self.calc_pearsons(self.pages.get(rels[i]), y)), order, to_compare)))
-                    results.append((query, rels[i], i, mva))
+                    results.append((query, rels[i], i+1, mva))
         return results
 
 
