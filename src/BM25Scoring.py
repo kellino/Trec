@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 import numpy as np
 from itertools import islice
 
@@ -79,7 +80,6 @@ class BM25():
                 results.append((doc, score))
             rs = sorted(results, key=lambda bm25: bm25[1])
             rs.reverse()
-            # for i in range(100):
             for i in range(len(bm.docs)):
                 line = "{} Q0 {} {} {} BM25b{}".format(
                     query, rs[i][0], i+1, rs[i][1], 0.75)
