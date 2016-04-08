@@ -1,9 +1,12 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 import numpy as np
 from scipy import spatial
 from sklearn.preprocessing import normalize
 from itertools import islice
 from operator import itemgetter
+
+# very slow implementation. TODO find some optimizations
 
 
 class MMR():
