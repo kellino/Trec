@@ -47,17 +47,20 @@ class AlphaNDCG():
         for i in range(len(js)):
             # special case for first element
             if i == 0:
-                gain.append(np.sum(js[i][2]) * (1 - alpha)**0)
+                gain.append(np.sum(js[i][2]))  # * (1 - alpha)**0)
                 for s, x in enumerate(js[i][2]):
                     seen[s] = x
             else:
-                e = 0
-                for s, x in enumerate(js[i][2]):
-                    if x == 1:
-                        e += seen.get(s)
-                        seen[s] += 1
-                new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
-                gain.append(new_gain)
+                if np.sum(js[i][2]) == 0:
+                    gain.append(gain[-1])
+                else:
+                    e = 0
+                    for s, x in enumerate(js[i][2]):
+                        if x == 1:
+                            e += seen.get(s)
+                            seen[s] += 1
+                    new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
+                    gain.append(new_gain)
         return np.sum(gain[:k])
 
     def run(self, query, alpha):
@@ -82,7 +85,7 @@ class AlphaNDCG():
             ideal = sorted(js, key=lambda (a, b, c): sum(c))
             ideal.reverse()
             idcg = self.calc_alpha_dcg(ideal, alpha, k)
-            print query, c, k, dcg / idcg
+            print "query {} doc {} k {} alphandcg {}".format(query, c, k, (dcg / idcg))
 
 
 if __name__ == '__main__':
