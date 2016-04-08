@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 import numpy as np
 
 
@@ -47,6 +48,7 @@ if __name__ == '__main__':
     n.docID_list = np.array(n.docID_list)
     n.relevance_list = np.array(n.relevance_list)
 
+    ks = []
     k_values = [1, 5, 10, 20, 30, 40, 50]
     for k in k_values:
         accumulator = []
@@ -63,4 +65,10 @@ if __name__ == '__main__':
                 else:
                     ndcg = 0.0
                 accumulator.append(ndcg)
-        print np.mean(accumulator)
+        ks.append(np.mean(accumulator, axis=0))
+    with open('./bm25_ndcg.txt', 'w') as f:
+        f.write('bm25\n')
+        f.write('K | NDCG@K\n')
+        f.write('----------\n')
+        for i, v in enumerate(ks):
+            f.write("{} | {:.3f}\n".format(k_values[i], v))
