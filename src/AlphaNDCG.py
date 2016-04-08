@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+from __future__ import division
 import numpy as np
 
 
@@ -59,11 +60,12 @@ class AlphaNDCG():
                         if x == 1:
                             e += seen.get(s)
                             seen[s] += 1
-                    new_gain = gain[-1] + (np.sum(js[i][2]) * (1 - alpha)**e)
+                    new_gain = gain[-1] + ((np.sum(js[i][2]) * (1 - alpha)**e)) / np.log2(2 + i)
                     gain.append(new_gain)
+        # now do discount
         return np.sum(gain[:k])
 
-    def run(self, query, alpha):
+    def run(self, query, alpha, ks):
         # isolate the part of ndeval which belongs to the query number
         belongs_to_query = (self.ndeval_query == query)
         collection = self.ndeval_docID[belongs_to_query]
@@ -80,17 +82,27 @@ class AlphaNDCG():
             # the index represents the subtopic
             js.append((query, c, judgements))
         # # main loop
-        for k in [1, 5, 10, 20, 30, 40, 50]:
+        at_k = []
+        for k in ks:
             dcg = self.calc_alpha_dcg(js, alpha, k)
             ideal = sorted(js, key=lambda (a, b, c): sum(c))
             ideal.reverse()
             idcg = self.calc_alpha_dcg(ideal, alpha, k)
-            print "query {} doc {} k {} alphandcg {}".format(query, c, k, (dcg / idcg))
+            at_k.append(dcg / idcg)
+        return at_k
+            # print "query {} doc {} k {} alphandcg {}".format(query, c, k, (dcg / idcg))
 
 
 if __name__ == '__main__':
     a = AlphaNDCG()
     a.get_scores()
     a.get_qrels()
+    ks = [1, 5, 10, 20, 30, 40, 50]
+    totals = []
     for i in range(201, 251):
-        a.run(i, 0.1)
+        at_k = a.run(i, 0.1, ks)
+        totals.append(at_k)
+    totals = np.array(totals)
+    means = np.mean(totals, axis=0)
+    for i in range(len(means)):
+        print "k {} mean {}".format(ks[i], means[i])
